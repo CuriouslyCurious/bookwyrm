@@ -17,7 +17,8 @@
 
 #include <termbox.h>
 
-#include "components/screen_butler.hpp"
+#include "screen_butler.hpp"
+#include "utils.hpp"
 
 namespace butler {
 
@@ -224,12 +225,13 @@ void screen_butler::wprintcont(int x, const int y, const string_view &str, const
 
 namespace tui {
 
-std::shared_ptr<butler::screen_butler> make_with(butler::script_butler &script_butler, vector<py::module> &seekers, logger_t &logger)
+std::shared_ptr<butler::screen_butler> make_with(butler::plugin_handler &plugin_handler,  logger_t &logger)
 {
-    auto tui = std::make_shared<butler::screen_butler>(script_butler.results(), logger);
-    script_butler.set_frontend(tui);
+    plugin_handler.load_plugins();
+    auto tui = std::make_shared<butler::screen_butler>(plugin_handler.results(), logger);
+    plugin_handler.set_frontend(tui);
     logger->set_screen_butler(tui);
-    script_butler.async_search(seekers);
+    plugin_handler.async_search();
     return tui;
 }
 

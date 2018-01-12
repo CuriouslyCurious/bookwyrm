@@ -21,8 +21,6 @@
 #include <vector>
 #include <algorithm>
 
-#include "item.hpp"
-
 namespace func {
 
 /*

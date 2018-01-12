@@ -17,12 +17,12 @@
 
 #pragma once
 
+
+#include "core/plugin_handler.hpp"
+#include "core/item.hpp"
 #include "common.hpp"
-#include "item.hpp"
-#include "python.hpp"
 #include "colours.hpp"
-#include "components/script_butler.hpp"
-#include "components/logger.hpp"
+#include "logger.hpp"
 #include "screens/base.hpp"
 #include "screens/multiselect_menu.hpp"
 #include "screens/item_details.hpp"
@@ -35,7 +35,7 @@ using logger_t = std::shared_ptr<logger::bookwyrm_logger>;
 namespace butler {
 
 /* Circular dependency guard. */
-class script_butler;
+class plugin_handler;
 
 /*
  * Another butler. This one handles whatever screens we want to show the user,
@@ -43,20 +43,59 @@ class script_butler;
  * which is forwarded to the currently focused screen unless it was used to
  * manage screens.
  */
-class screen_butler {
+class screen_butler : public frontend {
 public:
+    void update()
+    {
+        repaint_screens();
+    }
+
+    void log(const butler::log_level level, const string message)
+    {
+        using spdlvl = spdlog::level::level_enum;
+        using felvl  = butler::log_level;
+
+        /* Can we perhaps construct a spdlvl with the underlying int from level? */
+        spdlvl frontend_lvl;
+
+        switch (level) {
+            case felvl::trace:
+                frontend_lvl = spdlvl::trace;
+                break;
+            case felvl::debug:
+                frontend_lvl = spdlvl::debug;
+                break;
+            case felvl::info:
+                frontend_lvl = spdlvl::info;
+                break;
+            case felvl::warn:
+                frontend_lvl = spdlvl::warn;
+                break;
+            case felvl::err:
+                frontend_lvl = spdlvl::err;
+                break;
+            case felvl::critical:
+                frontend_lvl = spdlvl::critical;
+                break;
+            case felvl::off:
+                frontend_lvl = spdlvl::off;
+        }
+
+        log(frontend_lvl, message);
+    }
+
+    /* Send a log entry to the log screen. */
+    void log(const spdlog::level::level_enum level, const string message)
+    {
+        log_->log_entry(level, message);
+        repaint_screens();
+    }
+
     /* WARN: this constructor should only be used in make_with() above. */
     explicit screen_butler(vector<bookwyrm::item> &items, logger_t logger);
 
     /* Repaint all screens that need updating. */
     void repaint_screens();
-
-    /* Send a log entry to the log screen. */
-    void log_entry(spdlog::level::level_enum level, const string entry)
-    {
-        log_->log_entry(level, entry);
-        repaint_screens();
-    }
 
     /*
      * Display the TUI and let the user enter input.
@@ -135,7 +174,7 @@ private:
 
 namespace tui {
 
-std::shared_ptr<butler::screen_butler> make_with(butler::script_butler &script_butler, vector<py::module> &seekers, logger_t &logger);
+std::shared_ptr<butler::screen_butler> make_with(butler::plugin_handler &plugin_handler, logger_t &logger);
 
 /* ns tui */
 }

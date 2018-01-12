@@ -21,7 +21,7 @@
 #include <utility>
 
 #include "utils.hpp"
-#include "components/command_line.hpp"
+#include "command_line.hpp"
 
 enum {
     /*

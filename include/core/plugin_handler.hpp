@@ -20,26 +20,32 @@
 #include <mutex>
 #include <memory>
 #include <atomic>
-#include <spdlog/spdlog.h>
+#include <thread>
 
-#include "common.hpp"
 #include "item.hpp"
 #include "python.hpp"
-#include "components/logger.hpp"
-#include "components/screen_butler.hpp"
-
-namespace logger {
-
-class bookwyrm_logger;
-
-}
-
-using logger_t = std::shared_ptr<logger::bookwyrm_logger>;
 
 namespace butler {
 
-class script_butler;
-class screen_butler;
+enum class log_level {
+    trace    = 0,
+    debug    = 1,
+    info     = 2,
+    warn     = 3,
+    err      = 4,
+    critical = 5,
+    off      = 6
+};
+
+class frontend {
+public:
+
+    /* Updates the frontend after more items have been found. */
+    virtual void update() = 0;
+
+    /* Log something to the frontend with a fitting level. */
+    virtual void log(const log_level level, const std::string message) = 0;
+};
 
 /*
  * The bookwyrm's very own butler. First, the butler finds
@@ -49,9 +55,10 @@ class screen_butler;
  * what is wanted will be pushed back into the items_ vector, and
  * thus presented to the user.
  */
-class __attribute__ ((visibility("hidden"))) script_butler {
+class __attribute__ ((visibility("hidden"))) plugin_handler {
 public:
-    explicit script_butler(const bookwyrm::item &&wanted, logger_t logger);
+    explicit plugin_handler(const bookwyrm::item &&wanted)
+        : wanted_(wanted) {}
 
     /*
      * Explicitly delete the copy-constructor.
@@ -62,29 +69,29 @@ public:
      * copy-constructible, and when passing this to the Python module,
      * a copy is wanted instead of a reference.
      */
-    explicit script_butler(const script_butler&) = delete;
-    ~script_butler();
+    explicit plugin_handler(const plugin_handler&) = delete;
+    ~plugin_handler();
 
-    /* Find and load all seeker scripts. */
-    vector<py::module> load_seekers();
+    /* vector<py::module> */
+    void load_plugins();
 
-    /* Start a std::thread for each valid Python module found. */
-    void async_search(vector<py::module> &seekers);
+    /* Start a std::thread for each valid plugin found. */
+    void async_search();
 
     /* Try to add a found item, and then update the set menu. */
     void add_item(std::tuple<bookwyrm::nonexacts_t, bookwyrm::exacts_t, bookwyrm::misc_t> item_comps);
 
-    void log_entry(spdlog::level::level_enum lvl, string msg);
+    void log(log_level lvl, std::string msg);
 
     vector<bookwyrm::item>& results()
     {
         return items_;
     }
 
-    /* Which menu do we update when a scripts feeds bookwyrm an item? */
-    void set_frontend(std::shared_ptr<screen_butler> screen)
+    /* What frontend do we want to notify on updates? */
+    void set_frontend(std::shared_ptr<frontend> fe)
     {
-        frontend_ = screen;
+        frontend_ = fe;
     }
 
     void unset_frontend()
@@ -94,8 +101,8 @@ public:
 
 private:
     py::scoped_interpreter interp;
+    std::unique_ptr<py::gil_scoped_release> nogil;
 
-    logger_t logger_;
     const bookwyrm::item wanted_;
 
     /* Somewhere to store our found items. */
@@ -107,8 +114,9 @@ private:
     /* The same Python modules, but now running! */
     vector<std::thread> threads_;
 
-    /* Which screens do we want to notify about updates? */
-    std::weak_ptr<screen_butler> frontend_;
+    std::weak_ptr<frontend> frontend_;
+
+    vector<py::module> plugins_;
 };
 
 /* ns butler */

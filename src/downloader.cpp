@@ -26,7 +26,7 @@
 
 #include <fmt/ostream.h>
 
-#include "components/downloader.hpp"
+#include "downloader.hpp"
 #include "runes.hpp"
 #include "utils.hpp"
 

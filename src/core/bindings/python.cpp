@@ -17,18 +17,18 @@
 
 #include <fmt/format.h>
 
-#include <spdlog/common.h>
-
 #include "python.hpp"
 #include "utils.hpp"
 #include "item.hpp"
-#include "components/script_butler.hpp"
+#include "plugin_handler.hpp"
 
 namespace bw = bookwyrm;
 
 PYBIND11_MODULE(pybookwyrm, m)
 {
     m.attr("__doc__") = "bookwyrm python bindings";
+
+    /* bookwyrm::item bindings */
 
     m.attr("empty") = bw::empty;
 
@@ -38,12 +38,6 @@ PYBIND11_MODULE(pybookwyrm, m)
         .value("eq_lt", bw::year_mod::eq_lt)
         .value("lt",    bw::year_mod::lt)
         .value("gt",    bw::year_mod::gt);
-
-    py::enum_<spdlog::level::level_enum>(m, "loglevel")
-        .value("debug", spdlog::level::debug)
-        .value("info",  spdlog::level::info)
-        .value("warn",  spdlog::level::warn)
-        .value("error", spdlog::level::err);
 
     py::class_<bw::exacts_t>(m, "exacts_t")
         .def(py::init<const std::map<string, int>&, const string&>())
@@ -112,7 +106,15 @@ PYBIND11_MODULE(pybookwyrm, m)
             return "<bookwyrm.item with title '" + i.nonexacts.title + "'>";
         });
 
-    py::class_<butler::script_butler>(m, "bookwyrm")
-        .def("feed",        &butler::script_butler::add_item)
-        .def("log",         &butler::script_butler::log_entry);
+    /* butler::plugin_handler bindings */
+
+    py::enum_<butler::log_level>(m, "log_level")
+        .value("debug", butler::log_level::debug)
+        .value("info",  butler::log_level::info)
+        .value("warn",  butler::log_level::warn)
+        .value("error", butler::log_level::err);
+
+    py::class_<butler::plugin_handler>(m, "bookwyrm")
+        .def("feed",        &butler::plugin_handler::add_item)
+        .def("log",         &butler::plugin_handler::log);
 }
