@@ -11,11 +11,14 @@ using namespace std::chrono_literals;
 
 class dummy : public core::frontend {
 public:
-    explicit dummy() {}
+    explicit dummy()
+    {
+        std::cout << "Dummy frontend created.\n";
+    }
 
     void update()
     {
-        std::cout << '\r' << ++updates;
+
     }
 
     void log(const core::log_level level, const std::string message)
@@ -23,9 +26,6 @@ public:
         (void)level;
         (void)message;
     }
-
-private:
-    size_t updates = 0;
 };
 
 int main()
