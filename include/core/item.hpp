@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2017 Tmplt <tmplt@dragons.rocks>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #pragma once
 
 #include <cassert>
@@ -31,6 +48,15 @@ struct exacts_t {
     explicit exacts_t(std::pair<year_mod, int> yearmod, int volume, int number, const string &extension)
         : ymod(std::get<0>(yearmod)), year(std::get<1>(yearmod)), volume(volume), number(number),
         pages(empty), size(empty), extension(extension) {}
+
+    explicit exacts_t()
+        : ymod(year_mod::unused),
+        year(empty),
+        volume(empty),
+        number(empty),
+        pages(empty),
+        size(empty),
+        extension("") {}
 
     explicit exacts_t(const std::map<string, int> &dict, const string &extension)
         : ymod(year_mod::unused),
@@ -73,6 +99,14 @@ struct nonexacts_t {
         publisher(get_value(dict, "publisher")),
         journal(get_value(dict, "journal")),
         edition(get_value(dict, "edition")) {}
+
+    explicit nonexacts_t()
+        : authors({}),
+        title("some title"),
+        series(""),
+        publisher(""),
+        journal(""),
+        edition("") {}
 
     const vector<string> authors;
     const string title;

@@ -17,6 +17,8 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/lib/pybind11)
 add_subdirectory(${PROJECT_SOURCE_DIR}/lib/termbox)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src)
 
+add_subdirectory(${PROJECT_SOURCE_DIR}/unit-test)
+
 if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
     # Relocation R_X86_64_PC32 against symbols declared in the following libraries
     # cannot be used when making a shared object; compilation must be done with -fPIC
