@@ -17,18 +17,9 @@ namespace core {
 void plugin_handler::load_plugins()
 {
     vector<fs::path> plugin_paths;
-#ifdef DEBUG
+
     /* Bookwyrm must be run from build/ in DEBUG mode. */
     plugin_paths = { fs::canonical(fs::path("../src/core/plugins")) };
-#else
-    /* TODO: look through /etc/bookwyrm/plugins/ also. */
-    if (fs::path conf = std::getenv("XDG_CONFIG_HOME"); !conf.empty())
-        plugin_paths.push_back(conf / "bookwyrm/plugins");
-    else if (fs::path home = std::getenv("HOME"); !home.empty())
-        plugin_paths.push_back(home / ".config/bookwyrm/plugins");
-    else
-        log(log_level::err, "couldn't find any plugin directories.");
-#endif
 
     /*
      * Append the plugin paths to Python's sys.path,
@@ -53,12 +44,6 @@ void plugin_handler::load_plugins()
         for (const fs::path &p : fs::directory_iterator(plugin_path)) {
             if (p.extension() != ".py") continue;
 
-            if (!utils::readable_file(p)) {
-                log(log_level::err, fmt::format("can't load module '{}': not a regular file or unreadable"
-                        "; ignoring...", p.string()));
-                continue;
-            }
-
             try {
                 string module = p.stem();
                 log(log_level::debug, fmt::format("loading module '{}'...", module));
@@ -77,6 +62,7 @@ void plugin_handler::load_plugins()
 
 plugin_handler::~plugin_handler()
 {
+    // TODO: fix "thread must be current" issue spawning from this.
     for (auto &t : threads_)
         t.detach();
 
